@@ -1,5 +1,3 @@
-// gateway.services.ts
-
 import { Injectable } from '@angular/core';
 import { io } from 'socket.io-client';
 import { Observable, Subject } from 'rxjs';
@@ -9,26 +7,36 @@ import { Observable, Subject } from 'rxjs';
 })
 export class GatewayService {
   private socket: any;
-  private leaveSubject = new Subject<string>(); // Ajoutez cette ligne
+  private leaveSubject = new Subject<string>();
+  private nameTakenSubject = new Subject<string>();
 
   constructor() {
-    // Connexion au serveur Socket.IO
-    this.socket = io('http://localhost:3000'); // Remplacez avec l'URL de votre serveur
+    this.socket = io('http://localhost:3000');
   }
 
   joinRoom(roomId: string, playerName: string): Observable<any[]> {
     return new Observable(observer => {
       this.socket.emit('join', roomId, playerName);
-  
+
       // Listen for the 'updateRoomUsers' event to get the updated user list
-      this.socket.on('updateRoomUsers', (updatedUserList: any[]) => {
+      const updateRoomUsersHandler = (updatedUserList: any[]) => {
         observer.next(updatedUserList);
-      });
+      };
+
+      this.socket.on('updateRoomUsers', updateRoomUsersHandler);
+
+      // Listen for the 'nameTaken' event
+      const nameTakenHandler = (takenPlayerName: string) => {
+        this.nameTakenSubject.next(takenPlayerName);
+        // Unsubscribe from 'updateRoomUsers' since we won't need it anymore
+        this.socket.off('updateRoomUsers', updateRoomUsersHandler);
+      };
+
+      this.socket.on('nameTaken', nameTakenHandler);
     });
   }
 
   leaveRoom(roomId: string, playerName: string): void {
-    // Quitter une room avec un identifiant
     this.socket.emit('leave', roomId, playerName);
   }
 
@@ -42,5 +50,9 @@ export class GatewayService {
 
   onLeave(): Observable<string> {
     return this.leaveSubject.asObservable();
+  }
+
+  onNameTaken(): Observable<string> {
+    return this.nameTakenSubject.asObservable();
   }
 }

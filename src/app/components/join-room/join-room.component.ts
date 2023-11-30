@@ -1,7 +1,5 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { GatewayService } from 'src/services/gateway.services';
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-join-room',
@@ -11,17 +9,26 @@ import { Subscription } from 'rxjs';
 export class JoinRoomComponent {
   roomId: string = '';
   playerName: string = '';
+  playerRole: string = ''; // Nouvelle propriété pour stocker le rôle du joueur
 
   constructor(private router: Router) {}
 
-  joinRoom() {
-    if (this.roomId && this.playerName) {
-      // Rediriger vers la page RoomComponent avec le nom d'utilisateur en tant que paramètre
-      this.router.navigate(['/room', this.roomId], { queryParams: { playerName: this.playerName }});
+  createRoom() {
+    if (this.playerName) {
+      this.roomId = Math.random().toString(36).substring(2);
+      this.playerRole = 'host'; // attribuer le rôle "host" à celui qui crée la room
+      this.router.navigate(['/room', this.roomId], { queryParams: { playerName: this.playerName, playerRole: this.playerRole }});
     } else {
-      // Affichez un message d'erreur ou prenez une autre action appropriée
-      console.error('Both Room ID and Player Name are required.');
+      console.error('Player Name is required.');
     }
   }
-  
+
+  joinRoom() {
+    if (this.roomId && this.playerName) {
+      this.playerRole = 'guest'; // attribuer le rôle "guest" à ceux qui rejoignent la room
+      this.router.navigate(['/room', this.roomId], { queryParams: { playerName: this.playerName, playerRole: this.playerRole }});
+    } else {
+      console.error('Room ID and Player Name are required.');
+    }
+  }
 }

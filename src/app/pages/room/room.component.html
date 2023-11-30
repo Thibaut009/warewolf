@@ -1,8 +1,10 @@
-<p>Welcome, {{ playerName }}!</p>
-<p>room works!</p>
+<p>Welcome, {{ playerName }} {{playerRole}}!</p>
 
 <h2>Users in the Room:</h2>
-
 <ul>
     <li *ngFor="let player of players">{{ player }}</li>
 </ul>
+
+<h2>Cars Lists :</h2>
+<app-cards-list></app-cards-list>
+

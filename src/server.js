@@ -18,39 +18,47 @@ const io = new Server(server, {
 const roomUsers = {};
 
 io.on('connection', (socket) => {
-    console.log('User connected');
-  
-    socket.on('join', (roomId, playerName) => {
-      socket.join(roomId);
-  
-      if (!roomUsers[roomId]) {
-        roomUsers[roomId] = [];
-      }
-  
+  console.log('User connected');
+
+  socket.on('join', (roomId, playerName) => {
+    socket.join(roomId);
+
+    if (!roomUsers[roomId]) {
+      roomUsers[roomId] = [];
+    }
+
+    // Vérifier si le nom existe déjà dans la room
+    const isNameTaken = roomUsers[roomId].some(user => user.playerName === playerName);
+
+    if (isNameTaken) {
+      // Émettre l'événement 'nameTaken' avec le nom pris
+      socket.emit('nameTaken', playerName);
+    } else {
       roomUsers[roomId].push({ socketId: socket.id, playerName });
-  
+
       console.log(`User ${playerName} joined room ${roomId}`);
       console.log(`Users in room ${roomId}:`, roomUsers[roomId]);
-  
-      // Émettre l'événement pour mettre à jour les utilisateurs dans la room
-      io.to(roomId).emit('updateRoomUsers', roomUsers[roomId]);
-    });
-  
-    socket.on('leave', (roomId, playerName) => {
-      socket.leave(roomId);
-  
-      roomUsers[roomId] = roomUsers[roomId].filter(user => user.socketId !== socket.id);
-  
-      console.log(`User ${playerName} left room ${roomId}`);
-      console.log(`Users in room ${roomId}:`, roomUsers[roomId]);
-  
-      // Émettre l'événement pour mettre à jour les utilisateurs dans la room
-      io.to(roomId).emit('updateRoomUsers', roomUsers[roomId]);
-    });
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+      // Émettre l'événement pour mettre à jour les utilisateurs dans la room
+      io.to(roomId).emit('updateRoomUsers', roomUsers[roomId]);
+    }
+  });
+
+  socket.on('leave', (roomId, playerName) => {
+    socket.leave(roomId);
+
+    roomUsers[roomId] = roomUsers[roomId].filter(user => user.socketId !== socket.id);
+
+    console.log(`User ${playerName} left room ${roomId}`);
+    console.log(`Users in room ${roomId}:`, roomUsers[roomId]);
+
+    // Émettre l'événement pour mettre à jour les utilisateurs dans la room
+    io.to(roomId).emit('updateRoomUsers', roomUsers[roomId]);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
 });
 
 server.listen(3000, () => {
